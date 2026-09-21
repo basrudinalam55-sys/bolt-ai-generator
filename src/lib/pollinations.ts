@@ -23,6 +23,7 @@ export interface GenerationResult {
 const POLLINATIONS_BASE = 'https://image.pollinations.ai/prompt/'
 
 // Generate image URL (direct link, no proxy needed)
+// FIXED: prompt only in path, not in query params (prevents double encoding)
 export function generateImageUrl(options: GenerationOptions): string {
   const {
     prompt,
@@ -37,7 +38,6 @@ export function generateImageUrl(options: GenerationOptions): string {
   } = options
 
   const params = new URLSearchParams({
-    prompt: prompt.trim(),
     width: width.toString(),
     height: height.toString(),
     model,

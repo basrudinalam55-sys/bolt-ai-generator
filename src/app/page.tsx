@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { generateImageUrl, generateVariations, ASPECT_RATIOS, MODELS, PROMPT_TEMPLATES } from '@/lib/pollinations'
-import { Download, Copy, RefreshCw, Zap, Sparkles, Image, Settings, X, ChevronDown, Loader2, GalleryVerticalEnd } from 'lucide-react'
+import { generateImageUrl, generateVariations, ASPECT_RATIOS, MODELS, PROMPT_TEMPLATES, PLACEHOLDER_SVG } from '@/lib/pollinations'
+import { Download, Copy, RefreshCw, Zap, Sparkles, Image, Settings, X, ChevronDown, Loader2, GalleryVerticalEnd, Vibrate, Smartphone } from 'lucide-react'
 
 export function ImageGenerator() {
   const [prompt, setPrompt] = useState('')
@@ -15,7 +15,10 @@ export function ImageGenerator() {
   const [showSettings, setShowSettings] = useState(false)
   const [enhancePrompt, setEnhancePrompt] = useState(true)
   const [safeMode, setSafeMode] = useState(true)
+  const [isKeyboardOpen, setIsKeyboardOpen] = useState(false)
+  const [imageErrors, setImageErrors] = useState<Set<number>>(new Set())
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const galleryRef = useRef<HTMLDivElement>(null)
 
   // Load history from localStorage
   useEffect(() => {
@@ -34,11 +37,56 @@ export function ImageGenerator() {
     localStorage.setItem('bolt-ai-history', JSON.stringify(history.slice(0, 50)))
   }, [history])
 
+  // Keyboard detection for mobile - adds bottom padding when keyboard opens
+  useEffect(() => {
+    const handleResize = () => {
+      const isOpen = window.innerHeight < window.screen.height * 0.75
+      setIsKeyboardOpen(isOpen)
+      document.body.style.paddingBottom = isOpen ? '90px' : '0'
+    }
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      document.body.style.paddingBottom = '0'
+    }
+  }, [])
+
+  // Haptic feedback helper
+  const hapticFeedback = useCallback((type: 'light' | 'medium' | 'heavy' = 'light') => {
+    if ('vibrate' in navigator) {
+      const patterns = { light: 10, medium: 20, heavy: 30 }
+      navigator.vibrate(patterns[type])
+    }
+  }, [])
+
+  // Swipe detection for gallery
+  const [touchStart, setTouchStart] = useState<number | null>(null)
+  const [currentImageIndex, setCurrentImageIndex] = useState(0)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    setTouchStart(e.touches[0].clientX)
+  }
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStart === null) return
+    const diff = touchStart - e.changedTouches[0].clientX
+    if (Math.abs(diff) > 50 && generatedImages.length > 1) {
+      hapticFeedback('light')
+      setCurrentImageIndex(prev => 
+        diff > 0 
+          ? Math.min(prev + 1, generatedImages.length - 1)
+          : Math.max(prev - 1, 0)
+      )
+    }
+    setTouchStart(null)
+  }
+
   const handleGenerate = useCallback(async (customPrompt?: string) => {
     const finalPrompt = customPrompt || prompt
     if (!finalPrompt.trim()) return
 
     setIsGenerating(true)
+    setImageErrors(new Set())
     const { width, height } = ASPECT_RATIOS[aspectRatio]
     const urls = generateVariations(finalPrompt, 4, { width, height, model, enhance: enhancePrompt, safe: safeMode })
     
@@ -46,23 +94,31 @@ export function ImageGenerator() {
     await new Promise(r => setTimeout(r, 300))
     
     setGeneratedImages(urls)
+    setCurrentImageIndex(0)
     setHistory(prev => [{
       prompt: finalPrompt,
       images: urls,
       timestamp: Date.now(),
     }, ...prev].slice(0, 50))
     setIsGenerating(false)
+    hapticFeedback('medium')
   }, [prompt, aspectRatio, model, enhancePrompt, safeMode])
+
+  const handleImageError = useCallback((index: number) => {
+    setImageErrors(prev => new Set(prev).add(index))
+  }, [])
 
   const handleDownload = async (url: string, index: number) => {
     try {
       const response = await fetch(url)
+      if (!response.ok) throw new Error('Fetch failed')
       const blob = await response.blob()
       const link = document.createElement('a')
       link.href = URL.createObjectURL(blob)
       link.download = `bolt-ai-${Date.now()}-${index}.png`
       link.click()
       URL.revokeObjectURL(link.href)
+      hapticFeedback('light')
     } catch {
       alert('Download failed. Try right-click → Save image.')
     }
@@ -70,23 +126,27 @@ export function ImageGenerator() {
 
   const handleCopy = async (url: string) => {
     await navigator.clipboard.writeText(url)
-    alert('Image URL copied!')
+    hapticFeedback('light')
+    // Toast-like feedback
+    const toast = document.createElement('div')
+    toast.textContent = 'Copied!'
+    toast.style.cssText = 'position:fixed;bottom:100px;left:50%;transform:translateX(-50%);background:#f97316;color:white;padding:12px 24px;border-radius:12px;z-index:9999;font-weight:500;box-shadow:0 4px 20px rgba(249,115,22,0.4)'
+    document.body.appendChild(toast)
+    setTimeout(() => toast.remove(), 2000)
   }
 
   const handleTemplateClick = (templatePrompt: string) => {
     setPrompt(templatePrompt)
     setShowTemplates(false)
     handleGenerate(templatePrompt)
-  }
-
-  const handleRetry = () => {
-    handleGenerate()
+    hapticFeedback('light')
   }
 
   const clearHistory = () => {
     if (confirm('Clear all history?')) {
       setHistory([])
       localStorage.removeItem('bolt-ai-history')
+      hapticFeedback('medium')
     }
   }
 
@@ -344,13 +404,33 @@ export function ImageGenerator() {
                   key={index}
                   className="relative group glass rounded-xl overflow-hidden aspect-square"
                   role="listitem"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={handleTouchEnd}
                 >
                   <img
-                    src={url}
+                    src={imageErrors.has(index) ? PLACEHOLDER_SVG : url}
                     alt={`Generated image ${index + 1}: ${prompt}`}
                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
+                    onError={() => handleImageError(index)}
                   />
+                  
+                  {imageErrors.has(index) && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-dark-900/90">
+                      <div className="text-center p-4">
+                        <Zap className="h-12 w-12 mx-auto mb-2 text-orange-400/50" />
+                        <p className="text-xs text-dark-400">Failed to load</p>
+                        <button
+                          onClick={() => {
+                            setImageErrors(prev => { const n = new Set(prev); n.delete(index); return n; })
+                          }}
+                          className="mt-2 px-3 py-1 text-xs bg-orange-500/20 border border-orange-400 rounded-lg hover:bg-orange-500/30"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-3">
                     <div className="flex gap-2">
@@ -379,6 +459,22 @@ export function ImageGenerator() {
                       {MODELS[model].name}
                     </span>
                   </div>
+                  
+                  {/* Swipe indicator */}
+                  {generatedImages.length > 1 && (
+                    <div className="absolute bottom-10 left-1/2 -translate-x-1/2 flex gap-1">
+                      {generatedImages.map((_, i) => (
+                        <div
+                          key={i}
+                          className={`w-1.5 h-1.5 rounded-full transition-all ${
+                            i === currentImageIndex
+                              ? 'bg-orange-400 w-4'
+                              : 'bg-white/30 hover:bg-white/50'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </article>
               ))}
             </div>

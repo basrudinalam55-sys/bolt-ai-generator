@@ -79,6 +79,49 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Bolt AI" />
+        {/* Service Worker Registration */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', () => {
+                  navigator.serviceWorker.register('/sw.js').catch(() => {});
+                });
+              }
+            `,
+          }}
+        />
+        {/* JSON-LD Schema for SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'WebApplication',
+              name: 'Bolt AI Image Generator',
+              description: 'Free unlimited AI image generator powered by Pollinations AI. No signup, no limits, no cost.',
+              url: 'https://bolt-ai.vercel.app',
+              applicationCategory: 'GraphicsApplication',
+              operatingSystem: 'Any (Web-based)',
+              offers: {
+                '@type': 'Offer',
+                price: '0',
+                priceCurrency: 'USD',
+              },
+              featureList: [
+                'Free unlimited AI image generation',
+                'Multiple models: Flux, SDXL, GPT-Image, Midjourney, DALL-E 3',
+                'Aspect ratios: Square, Portrait, Landscape, Story, Video, Ultrawide',
+                'No signup required',
+                'No API key required',
+                'Mobile-first PWA',
+                'Download and share images',
+                'Generation history',
+                'Prompt templates',
+              ],
+            }),
+          }}
+        />
       </head>
       <body className="min-h-screen bg-dark-950 text-white font-sans antialiased">
         {children}
