@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="boltGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ea580c;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Background -->
+  <rect width="512" height="512" fill="#0f172a"/>
+  
+  <!-- Glow ring -->
+  <circle cx="256" cy="256" r="200" fill="none" stroke="url(#boltGrad)" stroke-width="4" opacity="0.3" filter="url(#glow)"/>
+  
+  <!-- Bolt icon -->
+  <g transform="translate(120, 80) scale(1.6)" filter="url(#glow)">
+    <path d="M136 80c-8.8 0-16 7.2-16 16v64c0 8.8 7.2 16 16 16h48c8.8 0 16-7.2 16-16v-24h-32c-8.8 0-16-7.2-16-16V96c0-8.8-7.2-16-16-16h-16zm0 96h16v-48h-16v48z" fill="url(#boltGrad)"/>
+    <path d="M272 80c-8.8 0-16 7.2-16 16v64c0 8.8 7.2 16 16 16h48c8.8 0 16-7.2 16-16v-24h-32c-8.8 0-16-7.2-16-16V96c0-8.8-7.2-16-16-16h-16zm0 96h16v-48h-16v48z" fill="url(#boltGrad)" opacity="0.7"/>
+  </g>
+  
+  <!-- Sparkle accents -->
+  <g fill="#fed7aa" opacity="0.9">
+    <polygon points="256,50 260,70 280,70 264,84 268,104 256,94 244,104 248,84 232,70 252,70"/>
+    <polygon points="420,180 423,192 435,192 426,200 429,212 420,206 411,212 414,200 405,192 417,192" transform="scale(0.6)"/>
+    <polygon points="80,400 83,412 95,412 86,420 90,432 80,426 70,432 74,420 65,412 77,412" transform="scale(0.5)"/>
+  </g>
+</svg>
