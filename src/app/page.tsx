@@ -4,7 +4,7 @@ import { useState, useCallback, useRef, useEffect } from 'react'
 import { generateImageUrl, generateVariations, ASPECT_RATIOS, MODELS, PROMPT_TEMPLATES, PLACEHOLDER_SVG } from '@/lib/pollinations'
 import { Download, Copy, RefreshCw, Zap, Sparkles, Image, Settings, X, ChevronDown, Loader2, GalleryVerticalEnd, Vibrate, Smartphone } from 'lucide-react'
 
-export function ImageGenerator() {
+export default function ImageGenerator() {
   const [prompt, setPrompt] = useState('')
   const [aspectRatio, setAspectRatio] = useState<'square' | 'portrait' | 'landscape' | 'story' | 'video' | 'ultrawide'>('square')
   const [model, setModel] = useState<'flux' | 'gptimage' | 'sdxl' | 'midjourney' | 'dalle3'>('flux')

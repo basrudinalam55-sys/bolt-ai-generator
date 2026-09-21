@@ -138,3 +138,13 @@ export const PROMPT_TEMPLATES = [
     'logo design, minimalist, vector',
   ]},
 ] as const
+
+// Fallback placeholder SVG (base64 encoded)
+export const PLACEHOLDER_SVG = `data:image/svg+xml;base64,${btoa(`
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" fill="none">
+  <rect width="1024" height="1024" fill="#1e293b"/>
+  <circle cx="512" cy="512" r="120" stroke="#f97316" stroke-width="4" fill="none" opacity="0.3"/>
+  <path d="M384 512h256M512 384v256" stroke="#f97316" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="512" cy="512" r="60" fill="#f97316" opacity="0.2"/>
+</svg>
+`)}`
